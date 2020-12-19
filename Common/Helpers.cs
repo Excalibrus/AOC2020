@@ -62,7 +62,7 @@ namespace Common
     public static string SubstringBetween(this string text, string leftString, string rightString)
     {
       int leftIndex = text.IndexOf(leftString, StringComparison.InvariantCultureIgnoreCase);
-      int rightIndex = text.IndexOf(rightString, StringComparison.InvariantCultureIgnoreCase);
+      int rightIndex = text.LastIndexOf(rightString, StringComparison.InvariantCultureIgnoreCase);
       if (leftIndex != -1 && rightIndex != -1 && leftIndex < rightIndex)
       {
         return text.Substring(leftIndex + 1, rightIndex - leftIndex - 1);
