@@ -65,7 +65,7 @@ namespace Common
       int rightIndex = text.LastIndexOf(rightString, StringComparison.InvariantCultureIgnoreCase);
       if (leftIndex != -1 && rightIndex != -1 && leftIndex < rightIndex)
       {
-        return text.Substring(leftIndex + 1, rightIndex - leftIndex - 1);
+        return text.Substring(leftIndex + leftString.Length, rightIndex - (leftIndex + leftString.Length));
       }
 
       return string.Empty;
