@@ -10,7 +10,7 @@ namespace Day19
 {
   class Program
   {
-    private static int MAX_DEPTH = 30;
+    private static int MAX_DEPTH = 1000;
     private static Dictionary<int, int> DepthCounter { get; set; }
     private static List<string> Messages { get; set; }
     private static Dictionary<int, int> MessageIndexer { get; set; }
@@ -22,7 +22,7 @@ namespace Day19
       Stopwatch watch = new Stopwatch();
       watch.Start();
 
-      string[] lines = File.ReadAllLines("input-test2.txt".ToApplicationPath());
+      string[] lines = File.ReadAllLines("input.txt".ToApplicationPath());
       var parsedInput = ParseRulesAndMessages(lines);
 
       Messages = parsedInput.Messages;
@@ -30,14 +30,14 @@ namespace Day19
       MessageSuccess = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => (bool?)null);
       MessagePath = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => new List<int>());
       MessageResult = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => string.Empty);
-      List<string> matchedPartOne = new List<string>();
+      List<string> matchedPart1 = new List<string>();
       int successesP1 = 0;
       for (int i = 0; i < Messages.Count; i++)
       {
         var response = ValidateMessage2(Messages[i], i, 0, 0, parsedInput.Rules);
         if (response.Any(x => x.Success && x.Index == Messages[i].Length))
         {
-          matchedPartOne.Add(Messages[i]);
+          matchedPart1.Add(Messages[i]);
           successesP1++;
         }
       }
@@ -47,16 +47,24 @@ namespace Day19
 
       int partOne = successesP1;
       
-      DepthCounter = parsedInput.Rules.ToDictionary(x => x.Key, x => 0);
+     
 
       MessagePath = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => new List<int>());
       MessageSuccess = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => (bool?)null);
       MessageResult = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => string.Empty);
-      // parsedInput.Rules[8].SubRulesIds.Add(new List<int> {42, 8});
-      // parsedInput.Rules[11].SubRulesIds.Add(new List<int> {42, 11, 31});
+       parsedInput.Rules[8].SubRulesIds.Add(new List<int> {42, 8});
+       parsedInput.Rules[11].SubRulesIds.Add(new List<int> {42, 11, 31});
+       List<string> matchedPart2 = new List<string>();
       int successCounter = 0;
       for (int i = 0; i < Messages.Count; i++)
       {
+        DepthCounter = parsedInput.Rules.ToDictionary(x => x.Key, x => 0);
+        var response = ValidateMessage2(Messages[i], i, 0, 0, parsedInput.Rules);
+        if (response.Any(x => x.Success && x.Index == Messages[i].Length))
+        {
+          matchedPart2.Add(Messages[i]);
+          successCounter++;
+        }
         bool success = false;
         // foreach (string messagePartOne in matchedPartOne)
         // {
@@ -78,8 +86,7 @@ namespace Day19
 
         if (!success)
         {
-          var response = ValidateMessage2(Messages[i], i, 0, 0, parsedInput.Rules);
-          successCounter += response.Any(x => x.Success && x.Index == Messages[i].Length) ? 1 : 0;  
+         
         }
         
         // if (i == 11)
@@ -151,11 +158,15 @@ namespace Day19
           foreach (int relevantIndex in relevantIndexes)
           {
             List<ValidationResponse> validationResponses = ValidateMessage2(message, messageId, relevantIndex, subRuleId, rules);
-            if (validationResponses.Count == 0)
+            if (validationResponses.Count > 0)
             {
-              return new List<int>();
+              newIndexes.AddRange(validationResponses.Select(x => x.Index).Distinct().ToList());  
             }
-            newIndexes.AddRange(validationResponses.Select(x => x.Index).Distinct().ToList());
+          }
+
+          if (newIndexes.Count == 0)
+          {
+            return new List<int>();
           }
           relevantIndexes = newIndexes.Distinct().ToList();
         }
