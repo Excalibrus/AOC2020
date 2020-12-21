@@ -12,6 +12,7 @@ namespace Day19
   {
     private static List<string> Messages { get; set; }
     private static Dictionary<int, Rule> Rules { get; set; }
+
     static void Main(string[] args)
     {
       Stopwatch watch = new Stopwatch();
@@ -23,9 +24,9 @@ namespace Day19
       int partOne = Messages.Sum(t => ValidateMessage(t, 0, 0).Any(x => x == t.Length) ? 1 : 0);
 
       Rules[8].SubRulesIds.Add(new List<int> {42, 8});
-       Rules[11].SubRulesIds.Add(new List<int> {42, 11, 31});
-       
-       int partTwo = Messages.Sum(t => ValidateMessage(t, 0, 0).Any(x => x == t.Length) ? 1 : 0);
+      Rules[11].SubRulesIds.Add(new List<int> {42, 11, 31});
+
+      int partTwo = Messages.Sum(t => ValidateMessage(t, 0, 0).Any(x => x == t.Length) ? 1 : 0);
 
       watch.Stop();
 
@@ -41,19 +42,20 @@ namespace Day19
       {
         if (index < message.Length && message.Substring(index, 1) == Rules[ruleNumber].Character)
         {
-          return new List<int> { index + 1 };
+          return new List<int> {index + 1};
         }
+
         return new List<int>();
       }
-      List<int> subRuleGroupIndexes = new List<int>(); 
+
+      List<int> subRuleGroupIndexes = new List<int>();
       foreach (List<int> subRuleIdsGroup in Rules[ruleNumber].SubRulesIds)
       {
         List<int> relevantIndexes = GetRelevantIndexes(message, index, subRuleIdsGroup);
-        if(relevantIndexes.Any())
+        if (relevantIndexes.Any())
         {
           subRuleGroupIndexes.AddRange(relevantIndexes);
         }
-        
       }
 
       return subRuleGroupIndexes;
@@ -72,7 +74,7 @@ namespace Day19
             List<int> validationResponses = ValidateMessage(message, relevantIndex, subRuleId);
             if (validationResponses.Count > 0)
             {
-              newIndexes.AddRange(validationResponses);  
+              newIndexes.AddRange(validationResponses);
             }
           }
 
@@ -80,6 +82,7 @@ namespace Day19
           {
             return new List<int>();
           }
+
           relevantIndexes = newIndexes.Distinct().ToList();
         }
         else
@@ -89,6 +92,7 @@ namespace Day19
           {
             return new List<int>();
           }
+
           relevantIndexes.AddRange(validationResponses);
         }
       }
@@ -96,7 +100,7 @@ namespace Day19
       return relevantIndexes.Where(x => message.Length >= x).ToList();
     }
 
-    
+
     private static void ParseRulesAndMessages(string[] lines)
     {
       Messages = new List<string>();
@@ -117,7 +121,7 @@ namespace Day19
         else
         {
           Rule rule = new Rule();
-          
+
           string[] parts = line.Split(':');
           int ruleId = int.Parse(parts[0]);
           if (parts[1].Contains('"'))
@@ -132,8 +136,9 @@ namespace Day19
             {
               rule.SubRulesIds.Add(
                   orPart.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries).Select(int.Parse)
-                  .ToList());
+                      .ToList());
             }
+
             Rules.Add(ruleId, rule);
           }
         }
