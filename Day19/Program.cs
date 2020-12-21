@@ -10,92 +10,22 @@ namespace Day19
 {
   class Program
   {
-    private static int MAX_DEPTH = 1000;
-    private static Dictionary<int, int> DepthCounter { get; set; }
     private static List<string> Messages { get; set; }
-    private static Dictionary<int, int> MessageIndexer { get; set; }
-    private static Dictionary<int, bool?> MessageSuccess { get; set; }
-    private static Dictionary<int, string> MessageResult { get; set; }
-    private static Dictionary<int, List<int>> MessagePath { get; set; }
+    private static Dictionary<int, Rule> Rules { get; set; }
     static void Main(string[] args)
     {
       Stopwatch watch = new Stopwatch();
       watch.Start();
 
       string[] lines = File.ReadAllLines("input.txt".ToApplicationPath());
-      var parsedInput = ParseRulesAndMessages(lines);
+      ParseRulesAndMessages(lines);
 
-      Messages = parsedInput.Messages;
-      MessageIndexer = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => 0);
-      MessageSuccess = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => (bool?)null);
-      MessagePath = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => new List<int>());
-      MessageResult = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => string.Empty);
-      List<string> matchedPart1 = new List<string>();
-      int successesP1 = 0;
-      for (int i = 0; i < Messages.Count; i++)
-      {
-        var response = ValidateMessage2(Messages[i], i, 0, 0, parsedInput.Rules);
-        if (response.Any(x => x.Success && x.Index == Messages[i].Length))
-        {
-          matchedPart1.Add(Messages[i]);
-          successesP1++;
-        }
-      }
+      int partOne = Messages.Sum(t => ValidateMessage(t, 0, 0).Any(x => x == t.Length) ? 1 : 0);
 
-      // List<string> generatedCombinations = GetMessage(0, parsedInput.Rules);
-      // List<int> lengths = generatedCombinations.Select(x => x.Length).Distinct().ToList();
-
-      int partOne = successesP1;
-      
-     
-
-      MessagePath = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => new List<int>());
-      MessageSuccess = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => (bool?)null);
-      MessageResult = Messages.Select((i, j) => new {j}).ToDictionary(x => x.j, x => string.Empty);
-       parsedInput.Rules[8].SubRulesIds.Add(new List<int> {42, 8});
-       parsedInput.Rules[11].SubRulesIds.Add(new List<int> {42, 11, 31});
-       List<string> matchedPart2 = new List<string>();
-      int successCounter = 0;
-      for (int i = 0; i < Messages.Count; i++)
-      {
-        DepthCounter = parsedInput.Rules.ToDictionary(x => x.Key, x => 0);
-        var response = ValidateMessage2(Messages[i], i, 0, 0, parsedInput.Rules);
-        if (response.Any(x => x.Success && x.Index == Messages[i].Length))
-        {
-          matchedPart2.Add(Messages[i]);
-          successCounter++;
-        }
-        bool success = false;
-        // foreach (string messagePartOne in matchedPartOne)
-        // {
-        //   if (Messages[i].Length > messagePartOne.Length && Messages[i].Contains(messagePartOne))
-        //   {
-        //     int indexOf = Messages[i].IndexOf(messagePartOne, StringComparison.InvariantCultureIgnoreCase);
-        //     if (indexOf != -1)
-        //     {
-        //       string newMessage = Messages[i].Remove(indexOf, messagePartOne.Length);
-        //       List<ValidationResponse> validationResponses = ValidateMessage2(newMessage, i, 0, 0, parsedInput.Rules);
-        //       if (validationResponses.Any(x => x.Success && x.Index == Messages[i].Length))
-        //       {
-        //         success = true;
-        //         break;
-        //       }
-        //     }
-        //   }
-        // }
-
-        if (!success)
-        {
-         
-        }
-        
-        // if (i == 11)
-        // {
-        //   PrintTree(response.Path, "", true);
-        // }
-      }
-
-      int partTwo = successCounter;
+      Rules[8].SubRulesIds.Add(new List<int> {42, 8});
+       Rules[11].SubRulesIds.Add(new List<int> {42, 11, 31});
+       
+       int partTwo = Messages.Sum(t => ValidateMessage(t, 0, 0).Any(x => x == t.Length) ? 1 : 0);
 
       watch.Stop();
 
@@ -103,40 +33,22 @@ namespace Day19
                         $"Part two result: {partTwo}\n" +
                         $"Execution time: {watch.ElapsedMilliseconds} ms\n" +
                         "");
-      // $"Generated combinations: {generatedCombinations.Count}\n" +
-      // $"Close to max: {lengths.Max(x => x) * 100 / Messages.Max(x => x.Length)}%");
     }
 
-    private static List<ValidationResponse> ValidateMessage2(string message, int messageId, int messageIndex, int ruleNumber, Dictionary<int, Rule> rules)
+    private static List<int> ValidateMessage(string message, int index, int ruleNumber)
     {
-      if (rules[ruleNumber].IsCharacter)
+      if (Rules[ruleNumber].IsCharacter)
       {
-        if (messageIndex < message.Length && message.Substring(messageIndex, 1) == rules[ruleNumber].Character)
+        if (index < message.Length && message.Substring(index, 1) == Rules[ruleNumber].Character)
         {
-          return new List<ValidationResponse>
-          {
-              new ValidationResponse(
-                  messageIndex + 1,
-                  true,
-                  true,
-                  new Path {Num = ruleNumber, Char = rules[ruleNumber].Character}
-              )
-          };
+          return new List<int> { index + 1 };
         }
-        return new List<ValidationResponse>();
+        return new List<int>();
       }
-      Path path = new Path{ Num = ruleNumber};
-      if (rules[ruleNumber].SubRulesIds.SelectMany(x => x).ToList().Contains(ruleNumber))
-      {
-        DepthCounter[ruleNumber]++;
-        Console.WriteLine($"Number {ruleNumber} going depth {DepthCounter[ruleNumber]}");
-        if(DepthCounter[ruleNumber] > MAX_DEPTH) return new List<ValidationResponse>();
-      }
-
       List<int> subRuleGroupIndexes = new List<int>(); 
-      foreach (List<int> subRuleIdsGroup in rules[ruleNumber].SubRulesIds)
+      foreach (List<int> subRuleIdsGroup in Rules[ruleNumber].SubRulesIds)
       {
-        List<int> relevantIndexes = GetRelevantIndexes(message, messageId, messageIndex, subRuleIdsGroup, rules);
+        List<int> relevantIndexes = GetRelevantIndexes(message, index, subRuleIdsGroup);
         if(relevantIndexes.Any())
         {
           subRuleGroupIndexes.AddRange(relevantIndexes);
@@ -144,10 +56,10 @@ namespace Day19
         
       }
 
-      return subRuleGroupIndexes.Select(x => new ValidationResponse(x, false, true, null)).ToList();
+      return subRuleGroupIndexes;
     }
 
-    private static List<int> GetRelevantIndexes(string message, int messageId, int index, List<int> ruleIds, Dictionary<int, Rule> rules)
+    private static List<int> GetRelevantIndexes(string message, int index, List<int> ruleIds)
     {
       List<int> relevantIndexes = new List<int>();
       foreach (int subRuleId in ruleIds)
@@ -157,10 +69,10 @@ namespace Day19
           List<int> newIndexes = new List<int>();
           foreach (int relevantIndex in relevantIndexes)
           {
-            List<ValidationResponse> validationResponses = ValidateMessage2(message, messageId, relevantIndex, subRuleId, rules);
+            List<int> validationResponses = ValidateMessage(message, relevantIndex, subRuleId);
             if (validationResponses.Count > 0)
             {
-              newIndexes.AddRange(validationResponses.Select(x => x.Index).Distinct().ToList());  
+              newIndexes.AddRange(validationResponses);  
             }
           }
 
@@ -172,199 +84,23 @@ namespace Day19
         }
         else
         {
-          List<ValidationResponse> validationResponses = ValidateMessage2(message, messageId, index, subRuleId, rules);
+          List<int> validationResponses = ValidateMessage(message, index, subRuleId);
           if (validationResponses.Count == 0)
           {
             return new List<int>();
           }
-          relevantIndexes.AddRange(validationResponses.Select(x => x.Index).Distinct().ToList());
+          relevantIndexes.AddRange(validationResponses);
         }
       }
 
-      return relevantIndexes;
+      return relevantIndexes.Where(x => message.Length >= x).ToList();
     }
 
-    private static List<ValidationResponse> ValidateMessage(string message, int messageId, int messageIndex, int ruleNumber, Dictionary<int, Rule> rules)
+    
+    private static void ParseRulesAndMessages(string[] lines)
     {
-      if (rules[ruleNumber].IsCharacter)
-      {
-        return new List<ValidationResponse>
-        {
-            new ValidationResponse(
-                messageIndex,
-                true,
-                messageIndex < message.Length && message.Substring(messageIndex, 1) == rules[ruleNumber].Character,
-                new Path {Num = ruleNumber, Char = rules[ruleNumber].Character}
-            )
-        };
-      }
-      
-      Path path = new Path{ Num = ruleNumber};
-      if (rules[ruleNumber].SubRulesIds.SelectMany(x => x).ToList().Contains(ruleNumber))
-      {
-        DepthCounter[ruleNumber]++;
-        Console.WriteLine($"Number {ruleNumber} going depth {DepthCounter[ruleNumber]}");
-        if(DepthCounter[ruleNumber] > MAX_DEPTH) return new List<ValidationResponse>{ new ValidationResponse(messageIndex, false, false, null) };
-      }
-
-      Dictionary<int, List<int>> subRuleIndexes = rules[ruleNumber].SubRulesIds.Select((x, i) => new {i}).ToDictionary(x => x.i, x => new List<int>());
-      for (int subRulesIdsIndex = 0; subRulesIdsIndex < rules[ruleNumber].SubRulesIds.Count; subRulesIdsIndex++)
-      {
-        List<int> subRuleIds = rules[ruleNumber].SubRulesIds[subRulesIdsIndex];
-        List<ValidationResponse> successValidations = new List<ValidationResponse>();
-        List<Path> paths = new List<Path>();
-        if (MessageSuccess[messageId].HasValue) break;
-        int successes = 0;
-        int index = messageIndex;
-        string test = string.Empty;
-        for (int i = 0; i < subRuleIds.Count; i++)
-        {
-          int ruleId = subRuleIds[i];
-          var validation = ValidateMessage(message, messageId, index, ruleId, rules);
-          List<ValidationResponse> successfulValidations = validation.Where(x => x.Success).ToList();
-          successValidations.AddRange(successfulValidations);
-          if (successfulValidations.Count == 0)
-          {
-            List<KeyValuePair<int, List<int>>> previousIndexes =
-                subRuleIndexes.Where(x => x.Value.Any(y => y != 0) && x.Key < i).ToList();
-            int? maxPreviousId = previousIndexes.Any() ? previousIndexes.Max(x => x.Key) : (int?) null;
-            if (!maxPreviousId.HasValue) break;
-            List<int> indexes = subRuleIndexes[maxPreviousId.Value].Where(x => x != 0).ToList();
-            for (int j = 0; j < indexes.Count; j++)
-            {
-              i = indexes[j];
-              indexes[j] = 0;
-              break;
-            }
-          }
-          else if (successfulValidations.Count == 1 && successfulValidations.First().CharacterFound)
-          {
-            paths.Add(validation.First().Path);
-            successes++;
-            index++;
-          }
-          else if (successfulValidations.Count >= 1)
-          {
-            List<int> newIndexes = successfulValidations.Select(x => x.Index).ToList();
-            if (newIndexes.Count > 0)
-            {
-              successes++;
-              index = newIndexes.First();
-              subRuleIndexes[subRulesIdsIndex].AddRange(newIndexes);
-            }
-          }
-        }
-        // foreach (int ruleId in subRuleIds)
-        // {
-        //   var validation = ValidateMessage(message, messageId, index, ruleId, rules);
-        //   if (!validation.Any(x => x.Success)) break;
-        //   if (validation.Count == 1 && validation.First().CharacterFound)
-        //   {
-        //     paths.Add(validation.First().Path);
-        //     index++;
-        //   }
-        //   successValidations.AddRange(validation.Where(x => x.Success).ToList());
-        //   successes++;    
-        //   // foreach (ValidationResponse validationResponse in validation.Where(x => x.Success))
-        //   // {
-        //   //   paths.Add(validation.Path);
-        //   //   index = ;
-        //   //   successes++;
-        //   //   test += validation.CharacterFound ? rules[ruleId].Character : string.Empty;
-        //   // }
-        //   
-        // }
-
-        if (successes == subRuleIds.Count)
-        {
-          MessageResult[messageId] = test + MessageResult[messageId];
-          MessagePath[messageId].AddRange(subRuleIds);
-          if (index == message.Length)
-          {
-            MessageSuccess[messageId] = true;
-          }
-
-          path.Children.AddRange(paths);
-          subRuleIndexes[subRulesIdsIndex].Add(index);
-          // return new List<ValidationResponse> {new ValidationResponse(messageIndex, false, true, path)};
-          // if (message.Substring(messageIndex, test.Length) == test)
-          // {
-          //   MessageResult[messageId] = test + MessageResult[messageId];  
-          //   messageIndex = index;
-          //   MessagePath[messageId].AddRange(subRuleIds);
-          //   if (messageIndex == message.Length)
-          //   {
-          //     MessageSuccess[messageId] = true;
-          //   }
-          //
-          //   path.Children.AddRange(paths);
-          //   return (index, false, true, path);
-          // }
-          //
-          // return (index, false, false, null);
-        }
-      }
-
-      return subRuleIndexes.Values.Any(x => x.Any())
-          ? subRuleIndexes.Values.Select(x => x.Any() ? x.Max() : -1).Distinct().Where(x => x != -1)
-              .Select(x => new ValidationResponse(x, false, true, path)).ToList()
-          : new List<ValidationResponse> {new ValidationResponse(messageIndex, false, false, path)};
-    }
-
-    private static List<string> GetMessage(int number, Dictionary<int, Rule> rules)
-    {
-      if (rules[number].IsCharacter) return new List<string> {rules[number].Character};
-      List<string> messages = new List<string>();
-      if (rules[number].SubRulesIds.SelectMany(x => x).ToList().Contains(number))
-      {
-        DepthCounter[number]++;
-        Console.WriteLine($"Number {number} going depth {DepthCounter[number]}");
-        if(DepthCounter[number] > MAX_DEPTH) return new List<string>();
-      }
-      foreach (List<int> subRulesIds in rules[number].SubRulesIds)
-      {
-        List<string> messages2 = new List<string>();
-        foreach (List<string> innerMessages in subRulesIds.Select(subRulesId => GetMessage(subRulesId, rules)))
-        {
-          if (innerMessages.Count == 1)
-          {
-            if (messages2.Count == 0)
-            {
-              messages2.AddRange(innerMessages);
-            }
-            else
-            {
-              messages2 = messages2.Select(x => x + innerMessages.First()).ToList();
-            }
-          }
-          else
-          {
-            if (messages2.Any())
-            {
-              List<string> finalMessages = new List<string>();
-              foreach (string message in messages2)
-              {
-                finalMessages.AddRange(innerMessages.Select(innerMessage => message + innerMessage));
-              }
-
-              messages2 = finalMessages;
-            }
-            else
-            {
-              messages2 = innerMessages;
-            }
-          }
-        }
-        messages.AddRange(messages2);
-      }
-
-      return messages.Where(x => Messages.Any(mes => mes.Contains(x))).ToList();
-    }
-
-    private static (Dictionary<int, Rule> Rules, List<string> Messages) ParseRulesAndMessages(string[] lines)
-    {
-      Dictionary<int, Rule> rules = new Dictionary<int, Rule>();
-      List<string> messages = new List<string>();
+      Messages = new List<string>();
+      Rules = new Dictionary<int, Rule>();
       bool parseMessages = false;
       foreach (string line in lines)
       {
@@ -376,17 +112,18 @@ namespace Day19
 
         if (parseMessages)
         {
-          messages.Add(line);
+          Messages.Add(line);
         }
         else
         {
           Rule rule = new Rule();
           
           string[] parts = line.Split(':');
+          int ruleId = int.Parse(parts[0]);
           if (parts[1].Contains('"'))
           {
             rule.Character = parts[1].SubstringBetween("\"", "\"");
-            rules.Add(int.Parse(parts[0]), rule);
+            Rules.Add(ruleId, rule);
           }
           else
           {
@@ -397,23 +134,9 @@ namespace Day19
                   orPart.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries).Select(int.Parse)
                   .ToList());
             }
-            rules.Add(int.Parse(parts[0]), rule);
+            Rules.Add(ruleId, rule);
           }
         }
-      }
-
-      return (rules, messages);
-    }
-    
-    public static void PrintTree(Path tree, string indent, bool last)
-    {
-      if(tree is null) return;
-      Console.WriteLine(indent + "+- " + tree.Num + " " + tree.Char);
-      indent += last ? "   " : "|  ";
-
-      for (int i = 0; i < tree.Children.Count; i++)
-      {
-        PrintTree(tree.Children[i], indent, i == tree.Children.Count - 1);
       }
     }
   }
