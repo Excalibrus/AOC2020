@@ -77,5 +77,11 @@ namespace Common
       Array.Reverse(array);
       return new string(array);
     }
+
+    public static bool EqualsList(this List<int> originalList, List<int> comparingList)
+    {
+      if (originalList.Count != comparingList.Count) return false;
+      return !originalList.Where((t, i) => t != comparingList[i]).Any();
+    }
   }
 }
